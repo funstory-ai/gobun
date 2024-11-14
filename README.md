@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://github.com/funstory-ai/gobun/blob/main/uglylogo.png?raw=true" alt="GoBun Logo" width="200">
+    <img src="https://github.com/funstory-ai/gobun/blob/main/assets/uglylogo.png?raw=true" alt="GoBun Logo" width="200">
   <p>Develop, Train, and Scale AI Applications Serverlessly and Cheaply</p>
 </div>
 
@@ -15,6 +15,8 @@ GoBun is built for connecting consumer grade gpu cloud providers and unifying th
 - **Serverless**: no need to manage servers, no need to worry about the underlying infrastructure, 
 
 ## Getting Started
+
+![gif](https://github.com/funstory-ai/gobun/blob/main/assets/demo.gif?raw=true)
 
 1. Register an account in XianGongYun
 2. Get the token from [XianGongYun](https://www.xiangongyun.com/console/user/accesstoken)
