@@ -22,3 +22,7 @@ GoBun is built for connecting consumer grade gpu cloud providers and unifying th
 4. Run `gobun create` to create a pod
 5. Run `gobun list --watch` to watch the pod status
 6. When the pod is running, run `gobun attach <pod_id>` to attach to the pod
+7. Run `gobun stop <pod_id>` to stop the pod
+
+
+
