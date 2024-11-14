@@ -32,6 +32,7 @@ type Options struct {
 	Auth            bool
 	PrivateKeyPath  string
 	PrivateKeyPwd   string
+	Password        string
 }
 
 func DefaultOptions() Options {
@@ -81,19 +82,25 @@ func NewClient(opt Options) (Client, error) {
 	var cli *ssh.Client
 
 	if opt.Auth {
-		// read private key file
-		pemBytes, err := os.ReadFile(opt.PrivateKeyPath)
-		if err != nil {
-			return nil, errors.Wrapf(
-				err, "reading private key %s failed", opt.PrivateKeyPath)
-		}
-		// create signer
-		signer, err := signerFromPem(pemBytes, []byte(opt.PrivateKeyPwd))
-		if err != nil {
-			return nil, errors.Wrap(err, "creating signer from private key failed")
-		}
-		config.Auth = []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
+		if opt.Password != "" {
+			// Use password authentication if provided
+			config.Auth = []ssh.AuthMethod{
+				ssh.Password(opt.Password),
+			}
+		} else {
+			// Existing private key authentication
+			pemBytes, err := os.ReadFile(opt.PrivateKeyPath)
+			if err != nil {
+				return nil, errors.Wrapf(
+					err, "reading private key %s failed", opt.PrivateKeyPath)
+			}
+			signer, err := signerFromPem(pemBytes, []byte(opt.PrivateKeyPwd))
+			if err != nil {
+				return nil, errors.Wrap(err, "creating signer from private key failed")
+			}
+			config.Auth = []ssh.AuthMethod{
+				ssh.PublicKeys(signer),
+			}
 		}
 	}
 
@@ -179,11 +186,11 @@ func (c generalClient) Attach() error {
 	})
 
 	modes := ssh.TerminalModes{
-		ssh.ECHO:          0,      // Disable echoing
-		ssh.ECHOCTL:       0,      // Don't print control chars
-		ssh.IGNCR:         1,      // Ignore CR on input
-		ssh.TTY_OP_ISPEED: 115200, // baud in
-		ssh.TTY_OP_OSPEED: 115200, // baud out
+		ssh.ECHO:          1,     // Enable echoing (changed from 0)
+		ssh.ECHOCTL:       1,     // Print control chars (changed from 0)
+		ssh.IGNCR:         0,     // Don't ignore CR on input (changed from 1)
+		ssh.TTY_OP_ISPEED: 14400, // Input speed in baud
+		ssh.TTY_OP_OSPEED: 14400, // Output speed in baud
 	}
 
 	height, width := 80, 40
