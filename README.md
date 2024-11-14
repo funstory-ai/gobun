@@ -1,7 +1,13 @@
 <div align="center">
-  <h1 style="font-size: 48px;">
-    <b><span style="color: #4285F4;">G</span><span style="color: #DB4437;">o</span><span style="color: #4285F4;">B</span><span style="color: #F4B400;">u</span><span style="color: #0F9D58;">n</span></b>
-  </h1>
+  <svg width="200" height="80" viewBox="0 0 200 80">
+    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="48" font-weight="bold">
+      <tspan fill="#4285F4">G</tspan>
+      <tspan fill="#DB4437">o</tspan>
+      <tspan fill="#4285F4">B</tspan>
+      <tspan fill="#F4B400">u</tspan>
+      <tspan fill="#0F9D58">n</tspan>
+    </text>
+  </svg>
   <p>Develop, Train, and Scale AI Applications Serverlessly and Cheaply</p>
 </div>
 
