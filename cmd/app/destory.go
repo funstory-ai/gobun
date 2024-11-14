@@ -1,6 +1,8 @@
 package app
 
-import "github.com/urfave/cli/v2"
+import (
+	"github.com/urfave/cli/v2"
+)
 
 var CommandDestroy = &cli.Command{
 	Name:   "destroy",

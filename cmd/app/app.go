@@ -21,6 +21,8 @@ func New() BunApp {
 	}
 	internalApp.Commands = []*cli.Command{
 		CommandList,
+		CommandCreate,
+		CommandAttach,
 	}
 	return BunApp{
 		App: *internalApp,

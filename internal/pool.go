@@ -5,7 +5,7 @@ type Pool interface {
 	// Return the unique identifier of the pool
 	ID() string
 	// Returns the created Pod and any error encountered
-	CreatePod() (PodOptions, error)
+	CreatePod(PodOptions) (Pod, error)
 
 	// DestroyPod removes a Pod from the cloud
 	// Takes a Pod ID and returns any error encountered
