@@ -23,6 +23,7 @@ func New() BunApp {
 		CommandList,
 		CommandCreate,
 		CommandAttach,
+		CommandDestroy,
 	}
 	return BunApp{
 		App: *internalApp,

@@ -173,5 +173,27 @@ func (p *Pool) CreatePod(options internal.PodOptions) (internal.Pod, error) {
 }
 
 func (p *Pool) DestroyPod(podID string) error {
+	payload := map[string]interface{}{
+		"id": podID,
+	}
+
+	result, err := p.api.DoRequest("POST", "/open/instance/shutdown_destroy", payload)
+	if err != nil {
+		return err
+	}
+
+	var response struct {
+		Code    int    `json:"code"`
+		Msg     string `json:"msg"`
+		Success bool   `json:"success"`
+	}
+	if err := json.NewDecoder(bytes.NewReader(result)).Decode(&response); err != nil {
+		return err
+	}
+
+	if response.Code != 200 {
+		return fmt.Errorf("failed to destroy pod, response code: %d %s", response.Code, response.Msg)
+	}
+
 	return nil
 }
