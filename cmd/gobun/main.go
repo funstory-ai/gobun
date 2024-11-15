@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/funstory-ai/gobun/cmd/app"
@@ -15,6 +16,7 @@ func handleErr(err error) {
 	if err == nil {
 		return
 	}
+	fmt.Println(err)
 	os.Exit(1)
 }
 
