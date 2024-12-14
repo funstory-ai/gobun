@@ -26,7 +26,11 @@ var CommandCreate = &cli.Command{
 
 func create(ctx *cli.Context) error {
 	vendorId := ctx.String("vendor")
-	vendorConfig, err := gobun_config.NewVendorConfigs().GetVendorConfig(vendorId)
+	vendorConfigs, err := gobun_config.NewVendorConfigs()
+	if err != nil {
+		return fmt.Errorf("failed to create vendor configs: %w", err)
+	}
+	vendorConfig, err := vendorConfigs.GetVendorConfig(vendorId)
 	if err != nil {
 		return fmt.Errorf("failed to get vendor config: %w", err)
 	}

@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	gobun_config "github.com/funstory-ai/gobun/internal/config"
@@ -59,17 +60,32 @@ func addVendor(ctx *cli.Context) error {
 		}
 	}
 
-	// If name is not provided, use default name
-	if name == "" {
-		name = "xiangongyun"
+	// 创建配置管理器
+	vendorConfigs, err := gobun_config.NewVendorConfigs()
+	if err != nil {
+		return fmt.Errorf("failed to create vendor configs: %w", err)
 	}
 
-	// 创建配置管理器
-	vendorConfigs := gobun_config.NewVendorConfigs()
+	// If name is not provided, generate a default name
+	if name == "" {
+		// 找到现有同类型vendor中最大的序号
+		maxNum := 0
+		for existingName := range vendorConfigs.ListVendorConfigs() {
+			if strings.HasPrefix(existingName, provider+"-") {
+				if num, err := strconv.Atoi(strings.TrimPrefix(existingName, provider+"-")); err == nil {
+					if num > maxNum {
+						maxNum = num
+					}
+				}
+			}
+		}
+		name = fmt.Sprintf("%s-%d", provider, maxNum+1)
+	}
 
 	// 创建 vendor 配置
 	vendorConfig := gobun_config.VendorConfig{
-		APISecret: values, // 使用解析后的 values 作为 APISecret
+		Provider:  provider,
+		APISecret: values,
 	}
 
 	// 添加配置

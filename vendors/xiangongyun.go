@@ -44,18 +44,13 @@ type XianGongYunProvider struct {
 	client        *http.Client
 }
 
-func NewXianGongYunProvider() *XianGongYunProvider {
-	return &XianGongYunProvider{
-		client: &http.Client{},
-	}
-}
-
 func (p *XianGongYunProvider) Init(ctx context.Context, options VendorOptions) error {
 	authorization, ok := options.APISecret["authorization"]
 	if !ok {
 		return fmt.Errorf("missing required authorization in APISecret")
 	}
 	p.authorization = authorization
+	p.client = &http.Client{}
 	return nil
 }
 
