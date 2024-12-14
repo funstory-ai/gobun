@@ -5,26 +5,47 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/funstory-ai/gobun/adaptors/xiangongyun"
-	"github.com/funstory-ai/gobun/internal"
+	gobun_config "github.com/funstory-ai/gobun/internal/config"
+	"github.com/funstory-ai/gobun/internal/resource"
+	"github.com/funstory-ai/gobun/vendors"
 	"github.com/urfave/cli/v2"
 )
 
 var CommandCreate = &cli.Command{
-	Name:   "create",
-	Usage:  "Create a new pod",
+	Name:  "create",
+	Usage: "Create a new pod",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:     "vendor",
+			Usage:    "Specify the vendor",
+			Required: true,
+		},
+	},
 	Action: create,
 }
 
 func create(ctx *cli.Context) error {
-	pool := xiangongyun.NewPool("Bearer " + os.Getenv("XGY_TOKEN"))
-
+	vendorId := ctx.String("vendor")
+	vendorConfig, err := gobun_config.NewVendorConfigs().GetVendorConfig(vendorId)
+	if err != nil {
+		return fmt.Errorf("failed to get vendor config: %w", err)
+	}
+	options := vendors.VendorOptions{
+		APISecret: vendorConfig.APISecret,
+	}
+	vendor, err := vendors.NewVendor(ctx.Context, vendors.CloudProviderTypeXianGongYun, options)
+	if err != nil {
+		return fmt.Errorf("failed to create vendor: %w", err)
+	}
 	// Create pod with default options
-	options := internal.PodOptions{
-		GPUModel: internal.GPUModelRTX4090,
+	podOptions := resource.PodOptions{
+		GPUModel: resource.GPUModelRTX4090,
 		GPUCount: 1,
 	}
-	pod, err := pool.CreatePod(options)
+	pod, err := vendor.CreatePod(ctx.Context, resource.PodOptions{
+		GPUModel: podOptions.GPUModel,
+		GPUCount: podOptions.GPUCount,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create pod: %w", err)
 	}

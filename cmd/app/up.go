@@ -8,9 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/funstory-ai/gobun/adaptors/xiangongyun"
-	"github.com/funstory-ai/gobun/internal"
+	gobun_config "github.com/funstory-ai/gobun/internal/config"
+	"github.com/funstory-ai/gobun/internal/resource"
 	"github.com/funstory-ai/gobun/internal/ssh"
+	"github.com/funstory-ai/gobun/vendors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
@@ -22,44 +23,49 @@ var CommandUp = &cli.Command{
 }
 
 func up(ctx *cli.Context) error {
-	// Get token from environment
-	token := os.Getenv("XGY_TOKEN")
-	if token == "" {
-		return fmt.Errorf("环境变量 XGY_TOKEN 未设置，请设置后重试")
+	// 获取 vendor 配置
+	vendorConfig, err := gobun_config.NewVendorConfigs().GetVendorConfig("xiangongyun") // 或从命令行参数获取
+	if err != nil {
+		return fmt.Errorf("failed to get vendor config: %w", err)
 	}
 
-	pool := xiangongyun.NewPool("Bearer " + token)
+	// 创建 vendor 实例
+	options := vendors.VendorOptions{
+		APISecret: vendorConfig.APISecret,
+	}
+	vendor, err := vendors.NewVendor(ctx.Context, vendors.CloudProviderTypeXianGongYun, options)
+	if err != nil {
+		return fmt.Errorf("failed to create vendor: %w", err)
+	}
 
-	// Create pod with default options
-	options := internal.PodOptions{
-		GPUModel: internal.GPUModelRTX4090,
+	// 创建 pod
+	podOptions := resource.PodOptions{
+		GPUModel: resource.GPUModelRTX4090,
 		GPUCount: 1,
 	}
-
-	fmt.Println("Creating pod...")
-	pod, err := pool.CreatePod(options)
+	pod, err := vendor.CreatePod(ctx.Context, podOptions)
 	if err != nil {
 		return fmt.Errorf("failed to create pod: %w", err)
 	}
 
-	// Set up signal handling for cleanup
+	// 设置信号处理
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start goroutine to handle cleanup on signal
+	// 处理清理的 goroutine
 	go func() {
 		<-sigChan
 		fmt.Println("\nReceived signal, cleaning up...")
-		if err := pool.DestroyPod(pod.ID); err != nil {
+		if err := vendor.DestroyPod(ctx.Context, pod); err != nil {
 			logrus.Errorf("Failed to destroy pod: %v", err)
 		}
 		os.Exit(0)
 	}()
 
-	// Defer pod cleanup in case of any errors
+	// 延迟清理 pod
 	defer func() {
 		fmt.Println("Cleaning up pod...")
-		if err := pool.DestroyPod(pod.ID); err != nil {
+		if err := vendor.DestroyPod(ctx.Context, pod); err != nil {
 			logrus.Errorf("Failed to destroy pod: %v", err)
 		}
 	}()
@@ -67,20 +73,20 @@ func up(ctx *cli.Context) error {
 	fmt.Printf("Pod created successfully (ID: %s)\n", pod.ID)
 	fmt.Println("Waiting for pod to be ready...")
 
-	// Poll pod status until it's running
+	// 轮询 pod 状态
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		pod, err = pool.GetPod(pod.ID)
+		pod, err = vendor.GetPod(ctx.Context, pod)
 		if err != nil {
 			return fmt.Errorf("failed to get pod status: %w", err)
 		}
 
-		if pod.Status == string(internal.StatusRunning) {
+		if pod.Status == string(resource.StatusRunning) {
 			fmt.Println("Pod is now running!")
 			break
-		} else if pod.Status == string(internal.StatusError) {
+		} else if pod.Status == string(resource.StatusError) {
 			return fmt.Errorf("pod failed to start")
 		}
 
@@ -88,7 +94,6 @@ func up(ctx *cli.Context) error {
 	}
 
 	fmt.Println("Attaching to pod...")
-	// Create SSH client options
 	port, err := strconv.Atoi(pod.SSHPort)
 	if err != nil {
 		return fmt.Errorf("failed to parse SSH port: %w", err)
@@ -101,14 +106,12 @@ func up(ctx *cli.Context) error {
 		Auth:     true,
 	}
 
-	// Create new SSH client
 	client, err := ssh.NewClient(opt)
 	if err != nil {
 		return fmt.Errorf("failed to create SSH client: %w", err)
 	}
 	defer client.Close()
 
-	// Attach to the pod
 	if err := client.Attach(); err != nil {
 		return fmt.Errorf("failed to attach to pod: %w", err)
 	}

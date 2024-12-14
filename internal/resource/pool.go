@@ -1,4 +1,4 @@
-package internal
+package resource
 
 // Pool represents an abstraction for cloud Pod management, for now we only support a could provider is a pool
 type Pool interface {

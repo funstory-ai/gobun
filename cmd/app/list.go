@@ -6,7 +6,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/funstory-ai/gobun/adaptors/xiangongyun"
+	gobun_config "github.com/funstory-ai/gobun/internal/config"
+	"github.com/funstory-ai/gobun/vendors"
 	"github.com/urfave/cli/v2"
 )
 
@@ -19,18 +20,34 @@ var CommandList = &cli.Command{
 			Aliases: []string{"w"},
 			Usage:   "Watch pods status, refresh every 5 seconds",
 		},
+		&cli.StringFlag{
+			Name:     "vendor",
+			Usage:    "Specify the vendor",
+			Required: true,
+		},
 	},
 	Action: list,
 }
 
 func list(ctx *cli.Context) error {
-	pool := xiangongyun.NewPool("Bearer " + os.Getenv("XGY_TOKEN"))
+	vendorId := ctx.String("vendor")
+	vendorConfig, err := gobun_config.NewVendorConfigs().GetVendorConfig(vendorId)
+	if err != nil {
+		return fmt.Errorf("failed to get vendor config: %w", err)
+	}
+	options := vendors.VendorOptions{
+		APISecret: vendorConfig.APISecret,
+	}
+	vendor, err := vendors.NewVendor(ctx.Context, vendors.CloudProviderTypeXianGongYun, options)
+	if err != nil {
+		return fmt.Errorf("failed to create vendor: %w", err)
+	}
 
 	// Function to display pods
 	displayPods := func() error {
-		pods, err := pool.ListPods()
+		pods, err := vendor.ListPods(ctx.Context)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to list pods: %w", err)
 		}
 
 		if ctx.Bool("watch") {
